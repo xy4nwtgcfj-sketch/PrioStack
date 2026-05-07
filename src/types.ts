@@ -6,6 +6,7 @@ export interface Aufgabe {
   deadline?: string // ISO date string
   erledigt: boolean
   erstelltAm: string // ISO datetime string
+  pomodoros?: number // abgeschlossene Pomodoro-Einheiten
 }
 
 export interface Zeiteintrag {
@@ -15,6 +16,7 @@ export interface Zeiteintrag {
   startzeit: string // ISO datetime
   endzeit: string   // ISO datetime
   dauer: number     // Minuten
+  istPomodoro?: boolean
 }
 
 export interface KIPlan {

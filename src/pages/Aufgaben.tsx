@@ -134,10 +134,17 @@ function AufgabeKarte({
         </button>
 
         <div className="flex-1 min-w-0">
-          <p className={`font-medium text-gray-900 leading-snug
-            ${aufgabe.erledigt ? 'line-through text-gray-400' : ''}`}>
-            {aufgabe.titel}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className={`font-medium text-gray-900 leading-snug
+              ${aufgabe.erledigt ? 'line-through text-gray-400' : ''}`}>
+              {aufgabe.titel}
+            </p>
+            {!!aufgabe.pomodoros && aufgabe.pomodoros > 0 && (
+              <span className="text-sm leading-none shrink-0" title={`${aufgabe.pomodoros} Pomodoro${aufgabe.pomodoros > 1 ? 's' : ''} abgeschlossen`}>
+                {'🍅'.repeat(Math.min(aufgabe.pomodoros, 4))}{aufgabe.pomodoros > 4 ? `×${aufgabe.pomodoros}` : ''}
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             {aufgabe.projekt && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-[#4F6BFF] bg-[#4F6BFF]/10 px-2 py-0.5 rounded-full">

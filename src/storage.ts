@@ -51,6 +51,11 @@ export function loescheAufgabe(id: string): void {
   speichereAufgaben(ladeAufgaben().filter(a => a.id !== id))
 }
 
+export function inkrementierePomodoro(id: string): void {
+  const alle = ladeAufgaben()
+  speichereAufgaben(alle.map(a => a.id === id ? { ...a, pomodoros: (a.pomodoros ?? 0) + 1 } : a))
+}
+
 // Zeiteinträge
 export function ladeZeiteintraege(): Zeiteintrag[] {
   return load<Zeiteintrag[]>(KEYS.zeiteintraege, [])
