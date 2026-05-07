@@ -23,3 +23,9 @@ export interface KIPlan {
   erstelltAm: string
   antwort: string
 }
+
+export interface Wochenbericht {
+  erstelltAm: string
+  wocheLabel: string
+  antwort: string
+}

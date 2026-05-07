@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { BarChart2 } from 'lucide-react'
-import { ladeZeiteintraege, ladeAufgaben } from '../storage'
-import type { Zeiteintrag, Aufgabe } from '../types'
+import { BarChart2, Sparkles, Copy, Check, TrendingUp, Flame, Clock, Lightbulb, Heart } from 'lucide-react'
+import { ladeZeiteintraege, ladeAufgaben, ladeApiKey, ladeWochenbericht, speichereWochenbericht } from '../storage'
+import { getWochenbericht } from '../ai'
+import type { Zeiteintrag, Aufgabe, Wochenbericht } from '../types'
 
 const KT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 
@@ -67,21 +68,152 @@ function aggregiere(
   })
 }
 
+// ── Bericht parsen & rendern ─────────────────────────────────────────────────
+
+interface Sektion { nr: number; titel: string; inhalt: string }
+
+function parseSektionen(text: string): Sektion[] {
+  const bloecke = text.trim().split(/\n\n+/)
+  return bloecke.reduce<Sektion[]>((acc, block) => {
+    const m = block.match(/^([1-5])[.)]\s+(.+?)(?:\n([\s\S]*))?$/)
+    if (m) acc.push({ nr: parseInt(m[1]), titel: m[2].trim(), inhalt: (m[3] ?? '').trim() })
+    return acc
+  }, [])
+}
+
+const SEKTION_CONFIG = [
+  { Icon: TrendingUp, bg: 'bg-blue-50',   border: 'border-blue-100',   text: 'text-blue-600'   },
+  { Icon: Flame,      bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-500' },
+  { Icon: Clock,      bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-600' },
+  { Icon: Lightbulb,  bg: 'bg-green-50',  border: 'border-green-100',  text: 'text-green-600'  },
+  { Icon: Heart,      bg: 'bg-rose-50',   border: 'border-rose-100',   text: 'text-rose-500'   },
+]
+
+function BerichtKarte({
+  bericht,
+  onKopieren,
+  kopiert,
+}: {
+  bericht: Wochenbericht
+  onKopieren: () => void
+  kopiert: boolean
+}) {
+  const sektionen = parseSektionen(bericht.antwort)
+  const zeigeRoh  = sektionen.length < 3
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Karten-Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 bg-gradient-to-r from-[#4F6BFF]/5 to-[#7B5CFF]/5">
+        <div className="flex items-center gap-2">
+          <Sparkles size={15} className="text-[#4F6BFF]" />
+          <span className="text-sm font-semibold text-gray-800">KI-Wochenbericht</span>
+          <span className="text-xs text-gray-400">{bericht.wocheLabel}</span>
+        </div>
+        <button
+          onClick={onKopieren}
+          className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100"
+        >
+          {kopiert ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+          <span>{kopiert ? 'Kopiert!' : 'Teilen'}</span>
+        </button>
+      </div>
+
+      {/* Sektionen */}
+      <div className="p-4 space-y-3">
+        {zeigeRoh ? (
+          // Fallback: Rohtext wenn Parsing fehlschlägt
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{bericht.antwort}</p>
+        ) : (
+          sektionen.map((s) => {
+            const cfg = SEKTION_CONFIG[(s.nr - 1) % SEKTION_CONFIG.length]
+            const { Icon } = cfg
+            return (
+              <div key={s.nr} className={`rounded-xl p-3.5 border ${cfg.bg} ${cfg.border}`}>
+                <div className="flex items-start gap-2.5">
+                  <div className={`mt-0.5 shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${cfg.bg}`}>
+                    <Icon size={14} className={cfg.text} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[11px] font-bold uppercase tracking-wide mb-1 ${cfg.text}`}>
+                      {s.nr}. {s.titel}
+                    </p>
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {s.inhalt || s.titel}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 pb-3">
+        <p className="text-[10px] text-gray-300 text-right">
+          Erstellt {new Date(bericht.erstelltAm).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // ── Komponente ──────────────────────────────────────────────────────────────
 
 export default function Woche() {
   const heute = new Date()
   const [wochentage] = useState(getWochentage)
+  const [alleEintraege] = useState<Zeiteintrag[]>(ladeZeiteintraege)
+  const [alleAufgaben] = useState<Aufgabe[]>(ladeAufgaben)
   const [tagDaten] = useState<TagDaten[]>(() =>
-    aggregiere(wochentage, ladeZeiteintraege(), ladeAufgaben())
+    aggregiere(wochentage, alleEintraege, alleAufgaben)
   )
 
-  const maxMin   = Math.max(...tagDaten.map(d => d.gesamtMin), 1)
-  const gesamtMin = tagDaten.reduce((s, d) => s + d.gesamtMin, 0)
+  const [bericht, setBericht]   = useState<Wochenbericht | null>(ladeWochenbericht)
+  const [laden, setLaden]       = useState(false)
+  const [fehler, setFehler]     = useState<string | null>(null)
+  const [kopiert, setKopiert]   = useState(false)
+
+  const maxMin        = Math.max(...tagDaten.map(d => d.gesamtMin), 1)
+  const gesamtMin     = tagDaten.reduce((s, d) => s + d.gesamtMin, 0)
   const gesamtErledigt = tagDaten.reduce((s, d) => s + d.erledigte, 0)
 
-  // Woche-Start / -Ende für Subtitle
   const wocheLabel = `${wochentage[0].toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })} – ${wochentage[6].toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}`
+
+  async function erstelleBericht() {
+    const apiKey = ladeApiKey()
+    if (!apiKey) {
+      setFehler('Kein API-Key gespeichert. Bitte auf der Heute-Seite eintragen.')
+      return
+    }
+    // Nur Einträge dieser Woche
+    const wochenEintraege = tagDaten.flatMap(d => d.eintraege)
+    if (wochenEintraege.length === 0) {
+      setFehler('Keine Zeiteinträge diese Woche – bitte zuerst Zeit erfassen.')
+      return
+    }
+    setFehler(null)
+    setLaden(true)
+    try {
+      const antwort = await getWochenbericht(wochenEintraege, alleAufgaben, wocheLabel, apiKey)
+      const neu: Wochenbericht = { erstelltAm: new Date().toISOString(), wocheLabel, antwort }
+      speichereWochenbericht(neu)
+      setBericht(neu)
+    } catch (e) {
+      setFehler((e as Error).message ?? 'Unbekannter Fehler')
+    } finally {
+      setLaden(false)
+    }
+  }
+
+  function kopieren() {
+    if (!bericht) return
+    const text = `FocusStack Wochenbericht (${bericht.wocheLabel})\n\n${bericht.antwort}`
+    navigator.clipboard.writeText(text).catch(() => {})
+    setKopiert(true)
+    setTimeout(() => setKopiert(false), 2000)
+  }
 
   return (
     <div className="flex flex-col min-h-screen pb-nav">
@@ -212,6 +344,44 @@ export default function Woche() {
             <span className="text-[10px] text-gray-300">0</span>
             <span className="text-[10px] text-gray-300">Max: {fmtLang(maxMin > 1 ? maxMin : 0)}</span>
           </div>
+        </div>
+
+        {/* ── KI-Wochenbericht ── */}
+        <div className="space-y-3">
+          <button
+            onClick={erstelleBericht}
+            disabled={laden}
+            className={`w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-sm
+              ${laden
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-[#4F6BFF] to-[#7B5CFF] text-white shadow-[#4F6BFF]/25 hover:shadow-[#4F6BFF]/40'
+              }`}
+          >
+            {laden ? (
+              <>
+                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Claude analysiert…
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} />
+                {bericht ? 'Wochenbericht aktualisieren' : 'Wochenbericht erstellen'}
+              </>
+            )}
+          </button>
+
+          {fehler && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+              <p className="text-red-600 text-sm">{fehler}</p>
+            </div>
+          )}
+
+          {bericht && (
+            <BerichtKarte bericht={bericht} onKopieren={kopieren} kopiert={kopiert} />
+          )}
         </div>
 
         {/* ── Zeiteinträge nach Tag ── */}

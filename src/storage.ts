@@ -1,4 +1,4 @@
-import type { Aufgabe, Zeiteintrag, KIPlan } from './types'
+import type { Aufgabe, Zeiteintrag, KIPlan, Wochenbericht } from './types'
 
 const KEYS = {
   aufgaben: 'focusstack_aufgaben',
@@ -7,6 +7,7 @@ const KEYS = {
   apiKey: 'focusstack_api_key',
   verfuegbareStunden: 'focusstack_stunden',
   onboardingDone: 'focusstack_onboarding_done',
+  wochenbericht: 'focusstack_wochenbericht',
 }
 
 function load<T>(key: string, fallback: T): T {
@@ -98,6 +99,15 @@ export function ladeVerfuegbareStunden(): number {
 
 export function speichereVerfuegbareStunden(stunden: number): void {
   save(KEYS.verfuegbareStunden, stunden)
+}
+
+// Wochenbericht
+export function ladeWochenbericht(): Wochenbericht | null {
+  return load<Wochenbericht | null>(KEYS.wochenbericht, null)
+}
+
+export function speichereWochenbericht(bericht: Wochenbericht): void {
+  save(KEYS.wochenbericht, bericht)
 }
 
 // Onboarding
