@@ -6,6 +6,7 @@ const KEYS = {
   kiPlan: 'focusstack_ki_plan',
   apiKey: 'focusstack_api_key',
   verfuegbareStunden: 'focusstack_stunden',
+  onboardingDone: 'focusstack_onboarding_done',
 }
 
 function load<T>(key: string, fallback: T): T {
@@ -97,4 +98,13 @@ export function ladeVerfuegbareStunden(): number {
 
 export function speichereVerfuegbareStunden(stunden: number): void {
   save(KEYS.verfuegbareStunden, stunden)
+}
+
+// Onboarding
+export function istOnboardingDone(): boolean {
+  return load<boolean>(KEYS.onboardingDone, false)
+}
+
+export function setzeOnboardingDone(): void {
+  save(KEYS.onboardingDone, true)
 }
