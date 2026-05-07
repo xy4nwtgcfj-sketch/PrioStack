@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ladeAufgaben, ladeApiKey, speichereApiKey,
   ladeVerfuegbareStunden, speichereVerfuegbareStunden,
-  ladeKIPlan, speichereKIPlan,
+  ladeKIPlan, speichereKIPlan, ladeAbweichungen,
 } from '../storage'
 import { getTagesplanung } from '../ai'
 
@@ -38,7 +38,7 @@ export default function Heute() {
     setLaden(true)
     try {
       speichereVerfuegbareStunden(stunden)
-      const antwort = await getTagesplanung(aufgaben, stunden, key)
+      const antwort = await getTagesplanung(aufgaben, stunden, key, ladeAbweichungen())
       const neuerPlan = { antwort, erstelltAm: new Date().toISOString() }
       speichereKIPlan(neuerPlan)
       setPlan(neuerPlan)

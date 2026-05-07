@@ -75,6 +75,14 @@ export function heutigeZeiteintraege(): Zeiteintrag[] {
   return ladeZeiteintraege().filter(z => new Date(z.startzeit).toDateString() === heute)
 }
 
+// Letzte N Einträge mit gespeicherter Abweichung (für KI-Prompt)
+export function ladeAbweichungen(anzahl = 10): { aufgabeTitel: string; abweichung: number }[] {
+  return ladeZeiteintraege()
+    .filter(e => e.abweichung !== undefined)
+    .slice(-anzahl)
+    .map(e => ({ aufgabeTitel: e.aufgabeTitel, abweichung: e.abweichung! }))
+}
+
 // KI-Plan
 export function ladeKIPlan(): KIPlan | null {
   return load<KIPlan | null>(KEYS.kiPlan, null)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CheckSquare, Plus, Trash2, Clock, Tag } from 'lucide-react'
-import { ladeAufgaben, aktualisiereAufgabe, loescheAufgabe } from '../storage'
+import { ladeAufgaben, aktualisiereAufgabe, loescheAufgabe, ladeZeiteintraege } from '../storage'
 import AufgabeModal from '../components/AufgabeModal'
 import type { Aufgabe } from '../types'
 
@@ -14,6 +14,13 @@ function formatDauer(min: number): string {
 export default function Aufgaben() {
   const [aufgaben, setAufgaben] = useState<Aufgabe[]>(() => ladeAufgaben())
   const [modalOffen, setModalOffen] = useState(false)
+
+  // Erfasste Gesamtzeit pro Aufgabe für Abweichungs-Badge
+  const [zeitProAufgabe] = useState<Map<string, number>>(() => {
+    const m = new Map<string, number>()
+    for (const e of ladeZeiteintraege()) m.set(e.aufgabeId, (m.get(e.aufgabeId) ?? 0) + e.dauer)
+    return m
+  })
 
   function refresh() {
     setAufgaben(ladeAufgaben())
@@ -72,14 +79,21 @@ export default function Aufgaben() {
                   Erledigt
                 </p>
                 <div className="space-y-2 opacity-60">
-                  {erledigt.map(a => (
-                    <AufgabeKarte
-                      key={a.id}
-                      aufgabe={a}
-                      onToggle={() => toggleErledigt(a.id, a.erledigt)}
-                      onLoeschen={() => loeschen(a.id)}
-                    />
-                  ))}
+                  {erledigt.map(a => {
+                    const erfasst = zeitProAufgabe.get(a.id) ?? 0
+                    const abweichungMin = erfasst > 0 && a.geschaetzteDauer > 0
+                      ? erfasst - a.geschaetzteDauer
+                      : undefined
+                    return (
+                      <AufgabeKarte
+                        key={a.id}
+                        aufgabe={a}
+                        onToggle={() => toggleErledigt(a.id, a.erledigt)}
+                        onLoeschen={() => loeschen(a.id)}
+                        abweichungMin={abweichungMin}
+                      />
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -109,10 +123,12 @@ function AufgabeKarte({
   aufgabe,
   onToggle,
   onLoeschen,
+  abweichungMin,
 }: {
   aufgabe: Aufgabe
   onToggle: () => void
   onLoeschen: () => void
+  abweichungMin?: number
 }) {
   return (
     <div className={`bg-white rounded-2xl p-4 shadow-sm border transition-all
@@ -142,6 +158,13 @@ function AufgabeKarte({
             {!!aufgabe.pomodoros && aufgabe.pomodoros > 0 && (
               <span className="text-sm leading-none shrink-0" title={`${aufgabe.pomodoros} Pomodoro${aufgabe.pomodoros > 1 ? 's' : ''} abgeschlossen`}>
                 {'🍅'.repeat(Math.min(aufgabe.pomodoros, 4))}{aufgabe.pomodoros > 4 ? `×${aufgabe.pomodoros}` : ''}
+              </span>
+            )}
+            {abweichungMin !== undefined && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                abweichungMin > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+              }`}>
+                {abweichungMin > 0 ? '+' : ''}{abweichungMin} Min
               </span>
             )}
           </div>

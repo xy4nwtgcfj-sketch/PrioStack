@@ -3,7 +3,8 @@ import type { Aufgabe, Zeiteintrag } from './types'
 export async function getTagesplanung(
   aufgaben: Aufgabe[],
   stunden: number,
-  apiKey: string
+  apiKey: string,
+  abweichungen?: { aufgabeTitel: string; abweichung: number }[],
 ): Promise<string> {
   const offene = aufgaben.filter(a => !a.erledigt)
   const jetzt = new Date()
@@ -28,15 +29,26 @@ Du hilfst dabei, den Arbeitstag optimal zu strukturieren.
 Antworte immer auf Deutsch, strukturiert und motivierend.
 Sei präzise und priorisiere nach Dringlichkeit (Deadline) und Wichtigkeit.`
 
+  // Build abweichungen context if available
+  let abweichungsText = ''
+  if (abweichungen && abweichungen.length > 0) {
+    const avg = Math.round(abweichungen.reduce((s, a) => s + a.abweichung, 0) / abweichungen.length)
+    const tendenz = avg > 0 ? 'unterschätzt die Zeit tendenziell' : 'überschätzt die Zeit tendenziell'
+    abweichungsText = `\nMeine historischen Zeitabweichungen (letzte ${abweichungen.length} Einträge):
+${abweichungen.map(a => `- "${a.aufgabeTitel}": ${a.abweichung > 0 ? '+' : ''}${a.abweichung} Min`).join('\n')}
+Durchschnitt: ${avg > 0 ? '+' : ''}${avg} Min – ich ${tendenz}.
+→ Bitte plane entsprechenden Puffer ein und passe die Zeitschätzungen realistisch an.\n`
+  }
+
   const userPrompt = `Heute ist ${datumText}, ${uhrzeitText} Uhr.
 Ich habe heute noch ${stunden} Stunden verfügbar.
 
 Meine offenen Aufgaben:
 ${aufgabenText || 'Keine offenen Aufgaben vorhanden.'}
-
+${abweichungsText}
 Bitte erstelle meinen Tagesplan:
 1. Nenne die Top 3–5 Aufgaben für heute mit je einer kurzen Begründung (1–2 Sätze)
-2. Zeige die Gesamtdauer der empfohlenen Aufgaben
+2. Zeige die Gesamtdauer der empfohlenen Aufgaben (mit Puffer falls nötig)
 3. Schreibe einen kurzen motivierenden Satz am Ende
 
 Format: Klare Struktur mit Nummern, kein unnötiger Fülltext.`

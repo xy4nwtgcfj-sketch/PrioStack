@@ -53,6 +53,53 @@ function spieleSignal(typ: 'pomodoro' | 'pause') {
   } catch { /* ignore AudioContext errors in restricted environments */ }
 }
 
+// ── Abweichungs-Popup ────────────────────────────────────────────────────────
+
+interface AbweichungsInfo {
+  aufgabeTitel: string
+  geschaetzt: number
+  tatsaechlich: number
+}
+
+function AbweichungsPopup({ info, onClose }: { info: AbweichungsInfo; onClose: () => void }) {
+  const diff = info.tatsaechlich - info.geschaetzt
+  const positiv = diff > 0
+
+  useEffect(() => {
+    const t = setTimeout(onClose, 6000)
+    return () => clearTimeout(t)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed bottom-[5.5rem] left-1/2 -translate-x-1/2 z-[90] w-[92%] max-w-[400px] animate-slide-up"
+      onClick={onClose}
+    >
+      <div className={`rounded-2xl border shadow-xl px-4 py-3 bg-white ${positiv ? 'border-red-100' : 'border-green-100'}`}>
+        <p className="text-[11px] text-gray-400 truncate mb-2">
+          Zeitvergleich · <span className="font-medium text-gray-600">{info.aufgabeTitel}</span>
+        </p>
+        <div className="flex items-center justify-around">
+          <div className="text-center">
+            <p className="text-[10px] text-gray-400 mb-0.5">Geschätzt</p>
+            <p className="text-base font-bold text-gray-700">{formatDauer(info.geschaetzt)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] text-gray-400 mb-0.5">Tatsächlich</p>
+            <p className="text-base font-bold text-gray-700">{formatDauer(info.tatsaechlich)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[10px] text-gray-400 mb-0.5">Abweichung</p>
+            <p className={`text-base font-bold ${positiv ? 'text-red-500' : 'text-green-500'}`}>
+              {positiv ? '+' : ''}{diff} Min
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PomodoroRing({ sekunden, total, modus }: { sekunden: number; total: number; modus: TimerModus }) {
   const r = 70
   const circ = 2 * Math.PI * r
@@ -84,6 +131,7 @@ export default function Zeiterfassung() {
   const [eintraege, setEintraege] = useState<Zeiteintrag[]>(() => heutigeZeiteintraege())
   const [toast, setToast] = useState<string | null>(null)
   const [pauseAngebot, setPauseAngebot] = useState(false)
+  const [abweichungsInfo, setAbweichungsInfo] = useState<AbweichungsInfo | null>(null)
 
   const startRef = useRef<Date | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -149,6 +197,7 @@ export default function Zeiterfassung() {
     const end = new Date()
     const dauerMin = Math.max(1, Math.round((end.getTime() - startRef.current.getTime()) / 60000))
     const aufgabe = aufgaben.find(a => a.id === ausgewaehlteId)!
+    const abweichung = aufgabe.geschaetzteDauer > 0 ? dauerMin - aufgabe.geschaetzteDauer : undefined
 
     speichereZeiteintrag({
       aufgabeId: ausgewaehlteId,
@@ -156,9 +205,13 @@ export default function Zeiterfassung() {
       startzeit: startRef.current.toISOString(),
       endzeit: end.toISOString(),
       dauer: dauerMin,
+      abweichung,
     })
     setEintraege(heutigeZeiteintraege())
     setToast(`${dauerMin} Min für "${aufgabe.titel}" erfasst ✓`)
+    if (abweichung !== undefined) {
+      setAbweichungsInfo({ aufgabeTitel: aufgabe.titel, geschaetzt: aufgabe.geschaetzteDauer, tatsaechlich: dauerMin })
+    }
     setSekunden(0)
     startRef.current = null
   }, [ausgewaehlteId, aufgaben])
@@ -194,6 +247,7 @@ export default function Zeiterfassung() {
     const end = new Date()
     const dauerMin = Math.max(1, Math.round((end.getTime() - startRef.current.getTime()) / 60000))
     const aufgabe = aufgaben.find(a => a.id === ausgewaehlteId)!
+    const abweichung = aufgabe.geschaetzteDauer > 0 ? dauerMin - aufgabe.geschaetzteDauer : undefined
 
     speichereZeiteintrag({
       aufgabeId: ausgewaehlteId,
@@ -201,9 +255,13 @@ export default function Zeiterfassung() {
       startzeit: startRef.current.toISOString(),
       endzeit: end.toISOString(),
       dauer: dauerMin,
+      abweichung,
     })
     setEintraege(heutigeZeiteintraege())
     setToast(`${dauerMin} Min erfasst (Pomodoro abgebrochen)`)
+    if (abweichung !== undefined) {
+      setAbweichungsInfo({ aufgabeTitel: aufgabe.titel, geschaetzt: aufgabe.geschaetzteDauer, tatsaechlich: dauerMin })
+    }
     setSekunden(0)
     startRef.current = null
   }, [ausgewaehlteId, aufgaben])
@@ -429,6 +487,9 @@ export default function Zeiterfassung() {
         </div>
       </div>
 
+      {abweichungsInfo && (
+        <AbweichungsPopup info={abweichungsInfo} onClose={() => setAbweichungsInfo(null)} />
+      )}
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>
   )

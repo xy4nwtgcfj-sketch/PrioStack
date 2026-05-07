@@ -17,6 +17,7 @@ export interface Zeiteintrag {
   endzeit: string   // ISO datetime
   dauer: number     // Minuten
   istPomodoro?: boolean
+  abweichung?: number // tatsaechlich - geschaetzt in Minuten (positiv = länger, negativ = kürzer)
 }
 
 export interface KIPlan {

@@ -181,6 +181,26 @@ export default function Woche() {
 
   const wocheLabel = `${wochentage[0].toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })} – ${wochentage[6].toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}`
 
+  // Schätzgenauigkeit: pro Aufgabe tatsächliche vs. geschätzte Zeit
+  const schaetzStats = (() => {
+    const perTask = new Map<string, { titel: string; geschaetzt: number; tatsaechlich: number }>()
+    for (const td of tagDaten) {
+      for (const e of td.eintraege) {
+        const a = alleAufgaben.find(a => a.id === e.aufgabeId)
+        if (!a || a.geschaetzteDauer === 0) continue
+        const prev = perTask.get(e.aufgabeId) ?? { titel: e.aufgabeTitel, geschaetzt: a.geschaetzteDauer, tatsaechlich: 0 }
+        perTask.set(e.aufgabeId, { ...prev, tatsaechlich: prev.tatsaechlich + e.dauer })
+      }
+    }
+    return [...perTask.values()]
+      .filter(t => t.tatsaechlich > 0)
+      .map(t => ({ ...t, abweichung: t.tatsaechlich - t.geschaetzt }))
+      .sort((a, b) => Math.abs(b.abweichung) - Math.abs(a.abweichung))
+  })()
+  const durchschnittAbw = schaetzStats.length > 0
+    ? Math.round(schaetzStats.reduce((s, t) => s + t.abweichung, 0) / schaetzStats.length)
+    : null
+
   async function erstelleBericht() {
     const apiKey = ladeApiKey()
     if (!apiKey) {
@@ -345,6 +365,69 @@ export default function Woche() {
             <span className="text-[10px] text-gray-300">Max: {fmtLang(maxMin > 1 ? maxMin : 0)}</span>
           </div>
         </div>
+
+        {/* ── Schätzgenauigkeit ── */}
+        {schaetzStats.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 pt-4 pb-3">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Schätzgenauigkeit
+                </h2>
+                {durchschnittAbw !== null && (
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                    durchschnittAbw > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                  }`}>
+                    Ø {durchschnittAbw > 0 ? '+' : ''}{durchschnittAbw} Min
+                  </span>
+                )}
+              </div>
+
+              {/* Durchschnitts-Balken */}
+              {durchschnittAbw !== null && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                    <span className="text-green-500 font-medium">Schneller</span>
+                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${durchschnittAbw > 0 ? 'bg-red-400' : 'bg-green-400'}`}
+                        style={{
+                          width: `${Math.min(Math.abs(durchschnittAbw) / 60 * 100, 100)}%`,
+                          marginLeft: durchschnittAbw <= 0 ? 'auto' : undefined,
+                        }}
+                      />
+                    </div>
+                    <span className="text-red-500 font-medium">Langsamer</span>
+                  </div>
+                  <p className="text-xs text-gray-400 text-center">
+                    {durchschnittAbw > 0
+                      ? `Du brauchst im Schnitt ${durchschnittAbw} Min länger als geschätzt`
+                      : `Du bist im Schnitt ${Math.abs(durchschnittAbw)} Min schneller als geschätzt`}
+                  </p>
+                </div>
+              )}
+
+              {/* Top 3 Abweichungen */}
+              <div className="space-y-2">
+                {schaetzStats.slice(0, 3).map((t, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{t.titel}</p>
+                      <p className="text-xs text-gray-400">
+                        Geschätzt {fmtLang(t.geschaetzt)} · Erfasst {fmtLang(t.tatsaechlich)}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                      t.abweichung > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                    }`}>
+                      {t.abweichung > 0 ? '+' : ''}{t.abweichung} Min
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── KI-Wochenbericht ── */}
         <div className="space-y-3">
