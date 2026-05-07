@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { BarChart2, Sparkles, Copy, Check, TrendingUp, Flame, Clock, Lightbulb, Heart } from 'lucide-react'
+import { Sparkles, Copy, Check, TrendingUp, Flame, Clock, Lightbulb, Heart } from 'lucide-react'
 import { ladeZeiteintraege, ladeAufgaben, ladeApiKey, ladeWochenbericht, speichereWochenbericht } from '../storage'
 import { getWochenbericht } from '../ai'
+import { IlluWoche } from '../components/Illustrations'
 import type { Zeiteintrag, Aufgabe, Wochenbericht } from '../types'
 
 const KT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
@@ -239,11 +240,21 @@ export default function Woche() {
     <div className="flex flex-col min-h-screen pb-nav">
 
       {/* ── Header ── */}
-      <div className="px-5 pt-12 pb-4 bg-white border-b border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900">Diese Woche</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          {wocheLabel} · {fmtLang(gesamtMin)} · {gesamtErledigt} Aufgaben erledigt
-        </p>
+      <div className="relative px-5 pt-12 pb-5 bg-gradient-to-br from-[#4F6BFF] to-[#4338CA] overflow-hidden">
+        <div className="absolute -top-12 -right-8 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
+        <div className="absolute -bottom-6 left-10 w-24 h-24 rounded-full bg-white/8 pointer-events-none" />
+        <h1 className="relative text-2xl font-bold text-white">Diese Woche</h1>
+        <p className="relative text-blue-200 text-sm mt-0.5">{wocheLabel}</p>
+        <div className="relative flex items-center gap-2 mt-3">
+          <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-white">
+            {fmtLang(gesamtMin)} erfasst
+          </span>
+          {gesamtErledigt > 0 && (
+            <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-white">
+              ✓ {gesamtErledigt} erledigt
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
@@ -469,10 +480,8 @@ export default function Woche() {
 
         {/* ── Zeiteinträge nach Tag ── */}
         {tagDaten.every(d => d.eintraege.length === 0) ? (
-          <div className="text-center py-14">
-            <div className="w-16 h-16 rounded-full bg-[#4F6BFF]/10 flex items-center justify-center mx-auto mb-4">
-              <BarChart2 size={28} className="text-[#4F6BFF]" />
-            </div>
+          <div className="text-center py-8">
+            <IlluWoche className="w-48 h-auto mx-auto mb-4 animate-float-d1" />
             <p className="font-semibold text-gray-600">Noch keine Zeiteinträge</p>
             <p className="text-sm text-gray-400 mt-1 max-w-[220px] mx-auto">
               Starte den Timer auf der Zeiterfassungs-Seite.

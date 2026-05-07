@@ -104,15 +104,29 @@ function PomodoroRing({ sekunden, total, modus }: { sekunden: number; total: num
   const r = 70
   const circ = 2 * Math.PI * r
   const offset = circ * (1 - sekunden / total)
-  const color = modus === 'pause' ? '#22C55E' : '#EF4444'
+  const isPause = modus === 'pause'
+  const gradId = isPause ? 'ring-grad-pause' : 'ring-grad-pomo'
+  const trackColor = isPause ? '#D1FAE5' : '#FEE2E2'
+  const glowColor = isPause ? 'rgba(34,197,94,0.55)' : 'rgba(239,68,68,0.55)'
+
   return (
-    <svg width="180" height="180" style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx="90" cy="90" r={r} fill="none" stroke="#F3F4F6" strokeWidth="8" />
+    <svg width="180" height="180"
+      style={{ transform: 'rotate(-90deg)', filter: `drop-shadow(0 0 10px ${glowColor})` }}
+    >
+      <defs>
+        <linearGradient id="ring-grad-pomo" x1="20" y1="20" x2="160" y2="160" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FF8A8A" /><stop offset="1" stopColor="#EF4444" />
+        </linearGradient>
+        <linearGradient id="ring-grad-pause" x1="20" y1="20" x2="160" y2="160" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#6EE7B7" /><stop offset="1" stopColor="#10B981" />
+        </linearGradient>
+      </defs>
+      <circle cx="90" cy="90" r={r} fill="none" stroke={trackColor} strokeWidth="9" />
       <circle
         cx="90" cy="90" r={r}
         fill="none"
-        stroke={color}
-        strokeWidth="8"
+        stroke={`url(#${gradId})`}
+        strokeWidth="9"
         strokeLinecap="round"
         strokeDasharray={circ}
         strokeDashoffset={offset}
@@ -302,9 +316,11 @@ export default function Zeiterfassung() {
   return (
     <div className="flex flex-col min-h-screen pb-nav">
       {/* Header */}
-      <div className="px-5 pt-12 pb-4 bg-white border-b border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900">Zeiterfassung</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
+      <div className="relative px-5 pt-12 pb-5 bg-gradient-to-br from-[#0F172A] via-[#1E3A8A] to-[#4F6BFF] overflow-hidden">
+        <div className="absolute -top-12 -right-10 w-44 h-44 rounded-full bg-white/8 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full bg-white/5 -translate-x-1/2 translate-y-1/2 pointer-events-none" />
+        <h1 className="relative text-2xl font-bold text-white">Zeiterfassung</h1>
+        <p className="relative text-blue-300 text-sm mt-0.5">
           Heute: {formatDauer(gesamtMinHeute)} erfasst
         </p>
       </div>

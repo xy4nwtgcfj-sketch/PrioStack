@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { CheckSquare, Plus, Trash2, Clock, Tag } from 'lucide-react'
+import { Plus, Trash2, Clock, Tag } from 'lucide-react'
 import { ladeAufgaben, aktualisiereAufgabe, loescheAufgabe, ladeZeiteintraege } from '../storage'
 import AufgabeModal from '../components/AufgabeModal'
+import { IlluAufgaben } from '../components/Illustrations'
 import type { Aufgabe } from '../types'
 
 function formatDauer(min: number): string {
@@ -42,19 +43,18 @@ export default function Aufgaben() {
   return (
     <div className="flex flex-col min-h-screen pb-nav">
       {/* Header */}
-      <div className="px-5 pt-12 pb-4 bg-white border-b border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900">Aufgaben</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
+      <div className="relative px-5 pt-12 pb-4 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 overflow-hidden">
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[#4F6BFF]/5 pointer-events-none" />
+        <h1 className="relative text-2xl font-bold text-gray-900">Aufgaben</h1>
+        <p className="relative text-sm text-gray-400 mt-0.5">
           {offen.length} offen · {erledigt.length} erledigt
         </p>
       </div>
 
       <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto">
         {aufgaben.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-full bg-[#4F6BFF]/10 flex items-center justify-center mb-4">
-              <CheckSquare size={32} className="text-[#4F6BFF]" />
-            </div>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <IlluAufgaben className="w-52 h-auto mb-5 animate-float" />
             <h3 className="font-semibold text-gray-700 mb-1">Keine Aufgaben</h3>
             <p className="text-sm text-gray-400">Erstelle deine erste Aufgabe!</p>
           </div>

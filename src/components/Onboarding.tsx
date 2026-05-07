@@ -45,7 +45,15 @@ export default function Onboarding({ onDone }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] bg-gradient-to-br from-[#4F6BFF] to-[#7B5CFF] flex flex-col">
+    <div className="fixed inset-0 z-[200] bg-gradient-to-br from-[#4F6BFF] to-[#7B5CFF] flex flex-col overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[6%] right-[-12%] w-72 h-72 rounded-full bg-white/10 animate-float-slow" />
+        <div className="absolute top-[38%] left-[-18%] w-56 h-56 rounded-full bg-white/8 animate-float" />
+        <div className="absolute bottom-[12%] right-[4%] w-44 h-44 rounded-full bg-white/10 animate-float-d1" />
+        <div className="absolute top-[62%] left-[18%] w-36 h-36 rounded-full bg-white/6 animate-float-d2" />
+        <div className="absolute top-[-5%] left-[30%] w-48 h-48 rounded-full bg-white/6 animate-float-slow" />
+      </div>
       {/* Fortschritts-Punkte */}
       <div className="flex justify-center gap-2 pt-14 pb-2">
         {([1, 2, 3] as const).map(n => (

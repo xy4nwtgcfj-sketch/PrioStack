@@ -7,6 +7,16 @@ import {
   ladeKIPlan, speichereKIPlan, ladeAbweichungen,
 } from '../storage'
 import { getTagesplanung } from '../ai'
+import { IlluMorgen } from '../components/Illustrations'
+
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 5)  return 'Gute Nacht!'
+  if (h < 12) return 'Guten Morgen!'
+  if (h < 17) return 'Guten Tag!'
+  if (h < 22) return 'Guten Abend!'
+  return 'Gute Nacht!'
+}
 
 export default function Heute() {
   const navigate = useNavigate()
@@ -55,10 +65,18 @@ export default function Heute() {
   return (
     <div className="flex flex-col min-h-screen pb-nav">
       {/* Header */}
-      <div className="px-5 pt-12 pb-5 bg-gradient-to-b from-[#4F6BFF] to-[#6B83FF]">
-        <p className="text-blue-200 text-sm font-medium capitalize">{wochentag}</p>
-        <h1 className="text-2xl font-bold text-white mt-0.5">Guten Morgen!</h1>
-        <p className="text-blue-200 text-sm mt-1">{offeneAufgaben} offene Aufgaben</p>
+      <div className="relative px-5 pt-12 pb-6 bg-gradient-to-br from-[#4F6BFF] via-[#5B75FF] to-[#7B5CFF] overflow-hidden">
+        <div className="absolute -top-14 -right-10 w-52 h-52 rounded-full bg-white/10 pointer-events-none" />
+        <div className="absolute top-6 right-20 w-16 h-16 rounded-full bg-white/8 pointer-events-none" />
+        <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-white/8 pointer-events-none" />
+        <p className="relative text-blue-200 text-sm font-medium capitalize">{wochentag}</p>
+        <h1 className="relative text-2xl font-bold text-white mt-0.5">{getGreeting()}</h1>
+        <div className="relative flex items-center gap-2 mt-2">
+          <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-white">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-200" />
+            {offeneAufgaben} offene Aufgaben
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
@@ -169,10 +187,8 @@ export default function Heute() {
         )}
 
         {!plan && !laden && (
-          <div className="text-center py-10">
-            <div className="w-16 h-16 rounded-full bg-[#4F6BFF]/10 flex items-center justify-center mx-auto mb-4">
-              <Sparkles size={28} className="text-[#4F6BFF]" />
-            </div>
+          <div className="text-center py-6">
+            <IlluMorgen className="w-56 h-auto mx-auto mb-4 animate-float-slow" />
             <h3 className="font-semibold text-gray-700 mb-1">Bereit für deinen Tag?</h3>
             <p className="text-sm text-gray-400 max-w-[260px] mx-auto">
               Erstelle deine Aufgaben und lass Claude deinen optimalen Tagesplan berechnen.

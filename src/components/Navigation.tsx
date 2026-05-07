@@ -18,13 +18,15 @@ export default function Navigation() {
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors
+              `flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors
                ${isActive ? 'text-[#4F6BFF]' : 'text-gray-400 hover:text-gray-600'}`
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+                <div className={`p-1.5 rounded-xl transition-all duration-200 ${isActive ? 'bg-[#4F6BFF]/12' : ''}`}>
+                  <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+                </div>
                 <span>{label}</span>
               </>
             )}
