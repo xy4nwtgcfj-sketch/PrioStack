@@ -3,6 +3,7 @@ import Navigation from './components/Navigation'
 import Heute from './pages/Heute'
 import Aufgaben from './pages/Aufgaben'
 import Zeiterfassung from './pages/Zeiterfassung'
+import Woche from './pages/Woche'
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route path="/" element={<Heute />} />
         <Route path="/aufgaben" element={<Aufgaben />} />
         <Route path="/zeiterfassung" element={<Zeiterfassung />} />
+        <Route path="/woche" element={<Woche />} />
       </Routes>
       <Navigation />
     </BrowserRouter>

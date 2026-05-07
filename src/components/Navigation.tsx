@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { Home, CheckSquare, Clock } from 'lucide-react'
+import { Home, CheckSquare, Clock, CalendarDays } from 'lucide-react'
 
 const links = [
-  { to: '/',             icon: Home,        label: 'Heute'       },
-  { to: '/aufgaben',     icon: CheckSquare, label: 'Aufgaben'    },
-  { to: '/zeiterfassung', icon: Clock,      label: 'Zeiterfassung' },
+  { to: '/',              icon: Home,         label: 'Heute'        },
+  { to: '/aufgaben',      icon: CheckSquare,  label: 'Aufgaben'     },
+  { to: '/zeiterfassung', icon: Clock,        label: 'Zeiterfassung' },
+  { to: '/woche',         icon: CalendarDays, label: 'Woche'        },
 ]
 
 export default function Navigation() {
@@ -17,13 +18,13 @@ export default function Navigation() {
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors
+              `flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors
                ${isActive ? 'text-[#4F6BFF]' : 'text-gray-400 hover:text-gray-600'}`
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
                 <span>{label}</span>
               </>
             )}
